@@ -45,6 +45,18 @@ where
     R: UsersRepository,
 {
     pub async fn create_user(&mut self, user: User) -> anyhow::Result<()> {
-        unimplemented!()
+        if user.email.is_empty() {
+            return Err(anyhow::Error::msg("user email cannot be empty"));
+        }
+
+        if user.first_name.is_empty() {
+            return Err(anyhow::Error::msg("user first name cannot be empty"));
+        }
+
+        if user.last_name.is_empty() {
+            return Err(anyhow::Error::msg("user last name cannot be empty"));
+        }
+
+        self.repository.create(user).await
     }
 }
