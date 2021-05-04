@@ -1,4 +1,5 @@
 mod api;
+
 use actix_web::{App, HttpServer};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;

@@ -1,29 +1,50 @@
-use anyhow::Result;
+use std::collections::HashMap;
 
+use async_trait::async_trait;
+
+#[derive(Debug)]
 struct User {
-    id: String,
     email: String,
     first_name: String,
     last_name: String,
 }
 
+#[async_trait]
 trait UsersRepository {
-    fn create(mut self, user: &User) -> Result<()>;
+    async fn create(&mut self, user: User) -> anyhow::Result<()>;
 }
 
+#[derive(Debug, Default)]
 struct InMemoryUserRepository {
-
-
+    inner: HashMap<String, User>,
 }
 
-impl InMemoryUserRepository {
-    pub fn new() -> Self {
-        Self
+#[async_trait]
+impl UsersRepository for InMemoryUserRepository {
+    async fn create(&mut self, user: User) -> anyhow::Result<()> {
+        if self.inner.get(&user.email).is_some() {
+            return Err(anyhow::Error::msg("user already exists"));
+        }
+
+        self.inner.insert(user.email.clone(), user);
+
+        Ok(())
     }
 }
 
-impl UsersRepository for InMemoryUserRepository {
-    fn create(mut self, user: &User) -> Result<()> {
-        todo!()
+#[derive(Debug)]
+struct UsersService<R>
+where
+    R: UsersRepository,
+{
+    repository: R,
+}
+
+impl<R> UsersService<R>
+where
+    R: UsersRepository,
+{
+    pub async fn create_user(&mut self, user: User) -> anyhow::Result<()> {
+        unimplemented!()
     }
 }
