@@ -340,6 +340,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "serde",
+ "thiserror",
  "tokio 1.6.0",
  "tracing",
  "tracing-subscriber",

@@ -2,16 +2,28 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct User {
     email: String,
     first_name: String,
     last_name: String,
 }
 
+#[derive(Debug, thiserror::Error)]
+enum RepositoryError {
+    #[error("user not found")]
+    NotFound,
+
+    #[error("user already exists")]
+    AlreadyExists,
+
+    #[error("repository failed: {0}")]
+    Other(#[from] anyhow::Error),
+}
+
 #[async_trait]
 trait UsersRepository {
-    async fn create(&mut self, user: User) -> anyhow::Result<()>;
+    async fn create(&mut self, user: User) -> Result<(), RepositoryError>;
 }
 
 #[derive(Debug, Default)]
@@ -21,15 +33,30 @@ struct InMemoryUserRepository {
 
 #[async_trait]
 impl UsersRepository for InMemoryUserRepository {
-    async fn create(&mut self, user: User) -> anyhow::Result<()> {
+    async fn create(&mut self, user: User) -> Result<(), RepositoryError> {
         if self.inner.get(&user.email).is_some() {
-            return Err(anyhow::Error::msg("user already exists"));
+            return Err(RepositoryError::AlreadyExists);
         }
 
         self.inner.insert(user.email.clone(), user);
 
         Ok(())
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+enum CreateUserError {
+    #[error("user email cannot be empty")]
+    EmptyEmail,
+
+    #[error("user first name cannot be empty")]
+    EmptyFirstName,
+
+    #[error("user last name cannot be empty")]
+    EmptyLastName,
+
+    #[error("failed to save user to repository: {0}")]
+    Repository(#[from] RepositoryError),
 }
 
 #[derive(Debug)]
@@ -47,20 +74,24 @@ where
     pub fn new(repository: R) -> Self {
         Self { repository }
     }
-    pub async fn create_user(&mut self, user: User) -> anyhow::Result<()> {
+
+    pub async fn create_user(&mut self, user: User) -> Result<(), CreateUserError> {
         if user.email.is_empty() {
-            return Err(anyhow::Error::msg("user email cannot be empty"));
+            return Err(CreateUserError::EmptyEmail);
         }
 
         if user.first_name.is_empty() {
-            return Err(anyhow::Error::msg("user first name cannot be empty"));
+            return Err(CreateUserError::EmptyFirstName);
         }
 
         if user.last_name.is_empty() {
-            return Err(anyhow::Error::msg("user last name cannot be empty"));
+            return Err(CreateUserError::EmptyLastName);
         }
 
-        self.repository.create(user).await
+        self.repository
+            .create(user)
+            .await
+            .map_err(CreateUserError::Repository)
     }
 }
 
@@ -70,6 +101,15 @@ mod tests {
 
     #[tokio::test]
     async fn create_user() {
-        let user_service = UsersService {};
+        let repository = InMemoryUserRepository::default();
+        let mut user_service = UsersService::new(repository);
+
+        let user = User {
+            email: "john@doe.com".to_owned(),
+            first_name: "John".to_owned(),
+            last_name: "Doe".to_owned(),
+        };
+
+        assert!(user_service.create_user(user.clone()).await.is_ok());
     }
 }
