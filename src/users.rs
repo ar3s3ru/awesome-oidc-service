@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct User {
     email: String,
     first_name: String,
@@ -24,6 +24,7 @@ enum RepositoryError {
 #[async_trait]
 trait UsersRepository {
     async fn create(&mut self, user: User) -> Result<(), RepositoryError>;
+    async fn get(&self, email: &str) -> Result<User, RepositoryError>;
 }
 
 #[derive(Debug, Default)]
@@ -41,6 +42,13 @@ impl UsersRepository for InMemoryUserRepository {
         self.inner.insert(user.email.clone(), user);
 
         Ok(())
+    }
+
+    async fn get(&self, email: &str) -> Result<User, RepositoryError> {
+        self.inner
+            .get(email)
+            .cloned()
+            .ok_or_else(|| RepositoryError::NotFound)
     }
 }
 
@@ -111,5 +119,7 @@ mod tests {
         };
 
         assert!(user_service.create_user(user.clone()).await.is_ok());
+
+        assert_eq!(user, repository.get(&user.email).await.unwrap())
     }
 }
