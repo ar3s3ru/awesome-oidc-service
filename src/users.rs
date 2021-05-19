@@ -44,6 +44,9 @@ impl<R> UsersService<R>
 where
     R: UsersRepository,
 {
+    pub fn new(repository: R) -> Self {
+        Self { repository }
+    }
     pub async fn create_user(&mut self, user: User) -> anyhow::Result<()> {
         if user.email.is_empty() {
             return Err(anyhow::Error::msg("user email cannot be empty"));
@@ -58,5 +61,15 @@ where
         }
 
         self.repository.create(user).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn create_user() {
+        let user_service = UsersService {};
     }
 }
