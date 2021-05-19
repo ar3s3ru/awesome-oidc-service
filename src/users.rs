@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use async_trait::async_trait;
 
@@ -27,25 +30,27 @@ trait UsersRepository {
     async fn get(&self, email: &str) -> Result<User, RepositoryError>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 struct InMemoryUserRepository {
-    inner: HashMap<String, User>,
+    inner: Arc<RwLock<HashMap<String, User>>>,
 }
 
 #[async_trait]
 impl UsersRepository for InMemoryUserRepository {
     async fn create(&mut self, user: User) -> Result<(), RepositoryError> {
-        if self.inner.get(&user.email).is_some() {
+        if self.inner.read().unwrap().get(&user.email).is_some() {
             return Err(RepositoryError::AlreadyExists);
         }
 
-        self.inner.insert(user.email.clone(), user);
+        self.inner.write().unwrap().insert(user.email.clone(), user);
 
         Ok(())
     }
 
     async fn get(&self, email: &str) -> Result<User, RepositoryError> {
         self.inner
+            .read()
+            .unwrap()
             .get(email)
             .cloned()
             .ok_or_else(|| RepositoryError::NotFound)
@@ -110,7 +115,7 @@ mod tests {
     #[tokio::test]
     async fn create_user() {
         let repository = InMemoryUserRepository::default();
-        let mut user_service = UsersService::new(repository);
+        let mut user_service = UsersService::new(repository.clone());
 
         let user = User {
             email: "john@doe.com".to_owned(),
@@ -119,7 +124,6 @@ mod tests {
         };
 
         assert!(user_service.create_user(user.clone()).await.is_ok());
-
         assert_eq!(user, repository.get(&user.email).await.unwrap())
     }
 }
