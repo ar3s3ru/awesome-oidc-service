@@ -126,4 +126,19 @@ mod tests {
         assert!(user_service.create_user(user.clone()).await.is_ok());
         assert_eq!(user, repository.get(&user.email).await.unwrap())
     }
+
+    #[tokio::test]
+    async fn cannot_create_users_with_same_email() {
+        let repository = InMemoryUserRepository::default();
+        let mut user_service = UsersService::new(repository.clone());
+
+        let user = User {
+            email: "john@doe.com".to_owned(),
+            first_name: "John".to_owned(),
+            last_name: "Doe".to_owned(),
+        };
+
+        assert!(user_service.create_user(user.clone()).await.is_ok());
+        assert!(user_service.create_user(user.clone()).await.is_err());
+    }
 }
