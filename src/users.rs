@@ -6,14 +6,14 @@ use std::{
 use async_trait::async_trait;
 
 #[derive(Debug, Clone, PartialEq)]
-struct User {
-    email: String,
-    first_name: String,
-    last_name: String,
+pub struct User {
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String,
 }
 
 #[derive(Debug, thiserror::Error)]
-enum RepositoryError {
+pub enum RepositoryError {
     #[error("user not found")]
     NotFound,
 
@@ -25,13 +25,13 @@ enum RepositoryError {
 }
 
 #[async_trait]
-trait UsersRepository {
+pub trait UsersRepository {
     async fn create(&mut self, user: User) -> Result<(), RepositoryError>;
     async fn get(&self, email: &str) -> Result<User, RepositoryError>;
 }
 
 #[derive(Debug, Clone, Default)]
-struct InMemoryUserRepository {
+pub struct InMemoryUserRepository {
     inner: Arc<RwLock<HashMap<String, User>>>,
 }
 
@@ -58,7 +58,7 @@ impl UsersRepository for InMemoryUserRepository {
 }
 
 #[derive(Debug, thiserror::Error)]
-enum CreateUserError {
+pub enum CreateUserError {
     #[error("user email cannot be empty")]
     EmptyEmail,
 
@@ -73,7 +73,7 @@ enum CreateUserError {
 }
 
 #[derive(Debug)]
-struct UsersService<R>
+pub struct UsersService<R>
 where
     R: UsersRepository,
 {
