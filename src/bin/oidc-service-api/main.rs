@@ -1,9 +1,10 @@
 mod api;
 
-use actix_web::{App, HttpServer};
-use awesome_oidc_service::users::{InMemoryUserRepository, User, UsersService};
+use actix_web::{web, App, HttpServer};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+
+use awesome_oidc_service::users::{InMemoryUserRepository, User, UsersService};
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
@@ -13,10 +14,17 @@ async fn main() -> anyhow::Result<()> {
     let repository = InMemoryUserRepository::default();
     let mut service = UsersService::new(repository);
 
-    HttpServer::new(|| App::new().service(api::health).service(api::post_users))
-        .bind("127.0.0.1:8081")?
-        .run()
-        .await?;
+    let app_data = web::Data::new(service);
+
+    HttpServer::new(|| {
+        App::new()
+            .app_data(app_data)
+            .service(api::health)
+            .service(api::post_users)
+    })
+    .bind("127.0.0.1:8081")?
+    .run()
+    .await?;
 
     Ok(())
 }

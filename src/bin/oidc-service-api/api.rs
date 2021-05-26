@@ -27,10 +27,17 @@ impl From<PostUsersRequest> for User {
 }
 
 #[post("/users")]
-pub async fn post_users(user: web::Json<PostUsersRequest>) -> impl Responder {
+pub async fn post_users(
+    service: web::Data<UsersService<InMemoryUserRepository>>,
+    user: web::Json<PostUsersRequest>,
+) -> impl Responder {
     tracing::debug!(?user);
-    let repository = InMemoryUserRepository::default();
-    let mut service = UsersService::new(repository);
-    service.create_user(user.into_inner().into()).await.unwrap();
+
+    service
+        .into_inner()
+        .create_user(user.into_inner().into())
+        .await
+        .unwrap();
+
     HttpResponse::Created()
 }
