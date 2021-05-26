@@ -12,13 +12,13 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::registry().with(fmt_layer).try_init()?;
 
     let repository = InMemoryUserRepository::default();
-    let mut service = UsersService::new(repository);
+    let service = UsersService::new(repository);
 
     let app_data = web::Data::new(service);
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
-            .app_data(app_data)
+            .app_data(app_data.clone())
             .service(api::health)
             .service(api::post_users)
     })

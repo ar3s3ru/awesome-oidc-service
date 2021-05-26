@@ -26,7 +26,7 @@ pub enum RepositoryError {
 
 #[async_trait]
 pub trait UsersRepository {
-    async fn create(&mut self, user: User) -> Result<(), RepositoryError>;
+    async fn create(&self, user: User) -> Result<(), RepositoryError>;
     async fn get(&self, email: &str) -> Result<User, RepositoryError>;
 }
 
@@ -37,7 +37,7 @@ pub struct InMemoryUserRepository {
 
 #[async_trait]
 impl UsersRepository for InMemoryUserRepository {
-    async fn create(&mut self, user: User) -> Result<(), RepositoryError> {
+    async fn create(&self, user: User) -> Result<(), RepositoryError> {
         if self.inner.read().unwrap().get(&user.email).is_some() {
             return Err(RepositoryError::AlreadyExists);
         }
@@ -88,7 +88,7 @@ where
         Self { repository }
     }
 
-    pub async fn create_user(&mut self, user: User) -> Result<(), CreateUserError> {
+    pub async fn create_user(&self, user: User) -> Result<(), CreateUserError> {
         if user.email.is_empty() {
             return Err(CreateUserError::EmptyEmail);
         }
