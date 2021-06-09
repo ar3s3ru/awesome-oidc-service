@@ -1,7 +1,7 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::Deserialize;
 
-use awesome_oidc_service::users::{InMemoryUserRepository, User, UsersService};
+use awesome_oidc_service::users::{InMemoryUserRepository, User, UsersService, CreateUserError, RepositoryError};
 
 #[get("/health")]
 pub async fn health() -> impl Responder {
@@ -40,6 +40,7 @@ pub async fn post_users(
 
     match result {
         Ok(()) => HttpResponse::Created(),
+        Err(CreateUserError::Repository(RepositoryError::AlreadyExists)) => HttpResponse::Conflict(),
         Err(_) => HttpResponse::InternalServerError(),
     }
 }
