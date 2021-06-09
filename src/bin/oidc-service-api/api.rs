@@ -33,11 +33,13 @@ pub async fn post_users(
 ) -> impl Responder {
     tracing::debug!(?user);
 
-    service
+    let result = service
         .into_inner()
         .create_user(user.into_inner().into())
-        .await
-        .unwrap();
+        .await;
 
-    HttpResponse::Created()
+    match result {
+        Ok(()) => HttpResponse::Created(),
+        Err(_) => HttpResponse::InternalServerError(),
+    }
 }
