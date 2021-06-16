@@ -16,6 +16,10 @@ async fn main() -> anyhow::Result<()> {
 
     let app_data = web::Data::new(service);
 
+    // let pool = PgPoolOptions::new()
+    //     .max_connections(5)
+    //     .connect("postgres://postgres:password@localhost/test").await?;
+
     HttpServer::new(move || {
         App::new()
             .app_data(app_data.clone())

@@ -1,3 +1,4 @@
+pub mod postgres;
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
